@@ -12,4 +12,4 @@ const generateRandomColor = () => {
   return `#${R}${G}${B}`;
 };
 
-export default generateRandomColor;
+export { generateRandomColor };

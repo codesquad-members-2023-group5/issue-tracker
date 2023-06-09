@@ -1,21 +1,26 @@
 import { rest } from 'msw';
 
 import { LOGIN, USERS, ISSUES, COMMENTS, LABELS, MILESTONES } from '../constants/api';
-import {
-  mockIssuesData,
-  mockUserImageData,
-  mockUserData,
-  mockLabelData,
-  mockMilestoneData,
-  mockIssueDetailData,
-  issueDetailData,
-} from './mockData';
-// import { mockUserImageData } from './mockData';
+// import {
+//   mockIssuesData,
+//   mockUserImageData,
+//   mockUserData,
+//   mockLabelData,
+//   mockMilestoneData,
+//   mockIssueDetailData,
+//   issueDetailData,
+// } from './mockData';
+import { mockUserImageData } from './mockData';
 
 const getIssues = (request, response, context) => {
-  // const mockIssuesData = localStorage.getItem('mockIssuesData');
+  const mockIssuesData = JSON.parse(localStorage.getItem('issueDetailData'));
+  const body = {
+    data: {
+      issues: mockIssuesData,
+    },
+  };
 
-  return response(context.status(200), context.json(mockIssuesData));
+  return response(context.status(200), context.json(body));
 };
 
 const getUserImage = (request, response, context) => {
@@ -25,33 +30,42 @@ const getUserImage = (request, response, context) => {
 };
 
 const getUserData = (request, response, context) => {
-  // const mockUserData = localStorage.getItem('mockUserData');
+  const mockUserData = JSON.parse(localStorage.getItem('mockUserData'));
 
   return response(context.status(200), context.json(mockUserData));
 };
 
 const getLabelData = (request, response, context) => {
-  // const mockLabelData = localStorage.getItem('mockLabelData');
+  const mockLabelData = JSON.parse(localStorage.getItem('mockLabelData'));
 
   return response(context.status(200), context.json(mockLabelData));
 };
 
 const getMilestoneData = (request, response, context) => {
-  // const mockMilestoneData = localStorage.getItem('mockMilestoneData');
+  const mockMilestoneData = JSON.parse(localStorage.getItem('mockMilestoneData'));
 
   return response(context.status(200), context.json(mockMilestoneData));
 };
 
 const getIssueDetailData = (request, response, context) => {
   const { issueId } = request.params;
+  const issueDetailData = JSON.parse(localStorage.getItem('issueDetailData'));
+
+  const targetData = issueDetailData.filter((issue) => issue.issueId === Number(issueId))[0];
+
   const data = {
-    data: mockIssueDetailData(Number(issueId)),
+    data: targetData,
   };
 
   return response(context.status(200), context.json(data));
 };
 
 const postNewIssueData = (request, response, context) => {
+  const issueDetailData = JSON.parse(localStorage.getItem('issueDetailData'));
+  const mockUserData = JSON.parse(localStorage.getItem('mockUserData'));
+  const mockMilestoneData = JSON.parse(localStorage.getItem('mockMilestoneData'));
+  const mockLabelData = JSON.parse(localStorage.getItem('mockLabelData'));
+
   const lastIssueId = issueDetailData.length !== 0 ? issueDetailData[issueDetailData.length - 1].issueId : 0;
   const { issueTitle, comment, assignee, writer, label, milestone } = request.body;
   const createdAt = new Date();
@@ -60,11 +74,11 @@ const postNewIssueData = (request, response, context) => {
     issueId: lastIssueId + 1,
     issueTitle,
     isopened: true,
+    createdAt,
     writer: {
       userId: 6,
       name: '훈딩',
       url: 'https://avatars.githubusercontent.com/u/56246060?v=4',
-      createdAt,
     },
     assignee: mockUserData.data.filter(({ userId }) => assignee.includes(userId)),
     milestone: mockMilestoneData.data.filter(({ milestoneId }) => milestone === milestoneId)[0] || null,
@@ -84,6 +98,7 @@ const postNewIssueData = (request, response, context) => {
   };
 
   issueDetailData.push(responseBody);
+  localStorage.setItem('issueDetailData', JSON.stringify(issueDetailData));
 
   return response(
     context.status(200),
@@ -96,9 +111,14 @@ const postNewIssueData = (request, response, context) => {
 };
 
 const editTargetIssueData = (request, response, context) => {
+  const issueDetailData = JSON.parse(localStorage.getItem('issueDetailData'));
+  const mockUserData = JSON.parse(localStorage.getItem('mockUserData'));
+  const mockMilestoneData = JSON.parse(localStorage.getItem('mockMilestoneData'));
+  const mockLabelData = JSON.parse(localStorage.getItem('mockLabelData'));
+
   const { issueId } = request.params;
 
-  const { title, isopened } = request.body;
+  const { title, isopened, assigneeId, milestoneId, labelId } = request.body;
 
   let targetIssueIndex = -1;
 
@@ -108,11 +128,61 @@ const editTargetIssueData = (request, response, context) => {
     }
   });
 
+  const targetIssue = issueDetailData[targetIssueIndex];
+
+  if (title) {
+    targetIssue.issueTitle = title;
+  }
+
+  if (isopened !== undefined) {
+    targetIssue.isopened = isopened;
+  }
+
+  if (assigneeId !== undefined) {
+    if (assigneeId === null) {
+      targetIssue.assignee = null;
+    } else {
+      const assignee = mockUserData.data.find((user) => user.userId === assigneeId);
+
+      if (assignee) {
+        targetIssue.assignee = [assignee];
+      }
+    }
+  }
+
+  if (milestoneId !== undefined) {
+    if (milestoneId === null) {
+      targetIssue.milestone = null;
+    } else {
+      const milestone = mockMilestoneData.find((item) => item.milestoneId === milestoneId);
+
+      if (milestone) {
+        targetIssue.milestone = [milestone];
+      }
+    }
+  }
+
+  if (labelId !== undefined) {
+    if (labelId === null) {
+      targetIssue.labels = [];
+    } else {
+      const labels = labelId.map((id) => {
+        const label = mockLabelData.find((item) => item.labelId === id);
+
+        return label;
+      });
+
+      targetIssue.labels = [labels];
+    }
+  }
+
   issueDetailData[targetIssueIndex] = {
     ...issueDetailData[targetIssueIndex],
     issueTitle: title || issueDetailData[targetIssueIndex].issueTitle,
     isopened: isopened !== undefined ? isopened : issueDetailData[targetIssueIndex].isopened,
   };
+
+  localStorage.setItem('issueDetailData', JSON.stringify(issueDetailData));
 
   return response(
     context.status(200),
@@ -125,6 +195,8 @@ const editTargetIssueData = (request, response, context) => {
 };
 
 const postMilestoneNewData = (request, response, context) => {
+  const mockMilestoneData = JSON.parse(localStorage.getItem('mockMilestoneData'));
+
   const lastMilestoneId =
     mockMilestoneData.data.length !== 0
       ? mockMilestoneData.data[mockMilestoneData.data.length - 1].milestoneId
@@ -141,6 +213,8 @@ const postMilestoneNewData = (request, response, context) => {
   };
 
   mockMilestoneData.data.push(responseBody);
+  localStorage.setItem('mockMilestoneData', JSON.stringify(mockMilestoneData));
+
   return response(
     context.status(200),
     context.json({
@@ -152,6 +226,7 @@ const postMilestoneNewData = (request, response, context) => {
 };
 
 const editMilestoneData = (request, response, context) => {
+  const mockMilestoneData = JSON.parse(localStorage.getItem('mockMilestoneData'));
   const { milestoneId } = request.params;
 
   const { title, content, deadline, isopened } = request.body;
@@ -171,6 +246,8 @@ const editMilestoneData = (request, response, context) => {
     isopened,
   };
 
+  localStorage.setItem('mockMilestoneData', JSON.stringify(mockMilestoneData));
+
   return response(
     context.status(200),
     context.json({
@@ -182,6 +259,7 @@ const editMilestoneData = (request, response, context) => {
 };
 
 const deleteMilestone = (request, response, context) => {
+  const mockMilestoneData = JSON.parse(localStorage.getItem('mockMilestoneData'));
   const { milestoneId } = request.params;
 
   const updatedMilestoneData = mockMilestoneData.data.filter(
@@ -189,6 +267,8 @@ const deleteMilestone = (request, response, context) => {
   );
 
   mockMilestoneData.data = updatedMilestoneData || []; // 해당 id에 해당하는 데이터를 지운 데이터로 바꿔줌.
+
+  localStorage.setItem('mockMilestoneData', JSON.stringify(mockMilestoneData));
 
   return response(
     context.status(200),
@@ -201,6 +281,7 @@ const deleteMilestone = (request, response, context) => {
 };
 
 const postLabelNewData = (request, response, context) => {
+  const mockLabelData = JSON.parse(localStorage.getItem('mockLabelData'));
   const lastLabelId =
     mockLabelData.data.length !== 0 ? mockLabelData.data[mockLabelData.data.length - 1].labelId : 1;
   const { labelName, content, backgroundColor, fontColor } = request.body;
@@ -214,6 +295,8 @@ const postLabelNewData = (request, response, context) => {
 
   mockLabelData.data.push(responseBody);
 
+  localStorage.setItem('mockLabelData', JSON.stringify(mockLabelData));
+
   return response(
     context.status(200),
     context.json({
@@ -225,6 +308,7 @@ const postLabelNewData = (request, response, context) => {
 };
 
 const editLabelData = (request, response, context) => {
+  const mockLabelData = JSON.parse(localStorage.getItem('mockLabelData'));
   const { labelId } = request.params;
 
   const { labelName, content, backgroundColor, fontColor } = request.body;
@@ -244,6 +328,8 @@ const editLabelData = (request, response, context) => {
     fontColor,
   };
 
+  localStorage.setItem('mockLabelData', JSON.stringify(mockLabelData));
+
   return response(
     context.status(200),
     context.json({
@@ -255,20 +341,81 @@ const editLabelData = (request, response, context) => {
 };
 
 const deleteLabel = (request, response, context) => {
+  const mockLabelData = JSON.parse(localStorage.getItem('mockLabelData'));
   const { labelId } = request.params;
 
   const updatedLabelData = mockLabelData.data.filter((label) => label.labelId !== Number(labelId));
 
   mockLabelData.data = updatedLabelData || []; // 해당 id에 해당하는 데이터를 지운 데이터로 바꿔줌.
 
+  localStorage.setItem('mockLabelData', JSON.stringify(mockLabelData));
+
   return response(
     context.status(200),
     context.json({
       status: 200,
       message: 'Label Data 삭제 완료',
-      data: mockMilestoneData.data,
+      data: mockLabelData.data,
     }),
   );
+};
+
+const postComment = (request, response, context) => {
+  const mockIssuesData = JSON.parse(localStorage.getItem('issueDetailData'));
+  const mockUserData = JSON.parse(localStorage.getItem('mockUserData'));
+
+  const { issueId } = request.params;
+  const { userId, content } = request.body;
+  const targetIndex = mockIssuesData.findIndex((issue) => issue.issueId === Number(issueId));
+  const { comment } = mockIssuesData.filter((issue) => issue.issueId === Number(issueId))[0];
+  const lastId = comment.length;
+
+  mockIssuesData[targetIndex].comment = [
+    ...comment,
+    {
+      commentId: Math.floor(Math.random() * 101),
+      content,
+      createdAt: new Date(),
+      commentUser: mockUserData.data[userId - 1],
+    },
+  ];
+
+  localStorage.setItem('issueDetailData', JSON.stringify(mockIssuesData));
+
+  return response(context.status(200), context.json());
+};
+
+const editComment = (request, response, context) => {
+  const mockIssuesData = JSON.parse(localStorage.getItem('issueDetailData'));
+
+  const { issueId, commentId } = request.params;
+
+  const { content } = request.body; // content만 바꿀거임!
+
+  const { comment } = mockIssuesData.filter((issue) => issue.issueId === Number(issueId))[0];
+  const targetComment = comment.filter((item) => item.commentId === Number(commentId))[0];
+
+  targetComment.content = content;
+  targetComment.createdAt = new Date();
+
+  localStorage.setItem('issueDetailData', JSON.stringify(mockIssuesData));
+
+  return response(context.status(200), context.json());
+};
+
+const deleteComment = (request, response, context) => {
+  const mockIssuesData = JSON.parse(localStorage.getItem('issueDetailData'));
+
+  const { issueId, commentId } = request.params;
+
+  const { comment } = mockIssuesData.filter((issue) => issue.issueId === Number(issueId))[0];
+  const targetCommentIndex = comment.findIndex((item) => item.commentId === Number(commentId));
+
+  console.log(targetCommentIndex, comment);
+  comment.splice(targetCommentIndex, 1);
+  localStorage.setItem('issueDetailData', JSON.stringify(mockIssuesData));
+
+  return response(context.status(200), context.json());
 };
 
 const mockAPIHandler = [
@@ -289,6 +436,10 @@ const mockAPIHandler = [
   rest.post(LABELS.POST_LABEL, postLabelNewData),
   rest.patch(LABELS.PATCH_LABEL(':labelId'), editLabelData),
   rest.delete(LABELS.DELETE_LABEL(':labelId'), deleteLabel),
+
+  rest.post(COMMENTS.POST_COMMENT(':issueId'), postComment),
+  rest.patch(COMMENTS.PATCH_COMMENT(':issueId', ':commentId'), editComment),
+  rest.delete(COMMENTS.DELETE_COMMENT(':issueId', ':commentId'), deleteComment),
 ];
 
 export { mockAPIHandler };

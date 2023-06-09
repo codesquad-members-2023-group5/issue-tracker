@@ -1,8 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { useFilterDispatchContext, useFilterStateContext } from '../../../../context/filterContext';
-import { FILTER_ACTION_TYPES } from '../../../../context/filterReducer';
+import {
+  useFilterDispatchContext,
+  useFilterStateContext,
+  FILTER_ACTION_TYPES,
+} from '../../../../context/filterContext';
 
 import Icon from '../../Icon';
 import { $MenuWrapper, $MenuLeftWrapper, $MenuImg, $MenuText, $LabelColor } from './style';
@@ -23,8 +26,12 @@ const DropDownMenu = ({
     const checkedOption = filterState[menuType];
 
     const isChecked = checkedOption === menuId;
+
     const menuClickHandler = () => {
-      filterDispatch({ type: FILTER_ACTION_TYPES.CLICK_MENU, payload: { filterType: menuType, id: menuId } });
+      filterDispatch({
+        type: FILTER_ACTION_TYPES.CHANGE_MENU,
+        payload: { filterType: menuType, id: menuId },
+      });
     };
 
     return (

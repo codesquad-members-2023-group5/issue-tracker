@@ -1,0 +1,87 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.11'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+	id 'java'
+	id 'org.asciidoctor.jvm.convert' version '3.3.2' // 1
+}
+
+group = 'team05.codesquad'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+ext {
+	snippetsDir = file('build/generated-snippets') // 2
+}
+
+test {
+	outputs.dir snippetsDir // 3
+	useJUnitPlatform()
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+	asciidoctorExtensions
+}
+
+repositories {
+	mavenCentral()
+}
+
+asciidoctor { // 4
+	configurations 'asciidoctorExtensions'
+	inputs.dir snippetsDir
+	dependsOn test
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation 'mysql:mysql-connector-java:8.0.32'
+
+	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc' // 5
+	asciidoctorExtensions 'org.springframework.restdocs:spring-restdocs-asciidoctor' // 6
+
+	// S3 의존성 설치
+	implementation "com.amazonaws:aws-java-sdk-s3:1.12.281"
+}
+
+task copyDocument(type: Copy) { // 7
+	dependsOn asciidoctor
+
+	from file("build/docs/asciidoc")
+	into file("src/main/resources/static/docs")
+}
+
+bootJar {
+	dependsOn copyDocument // 8
+}
+
+/**
+ * 1: gradle7부터 사용하는 플러그인
+ *    asciidoc 파일 변환, build 디렉토리에 복사하는 플러그인
+ *
+ * 2: 생성된 스니펫을 저장할 위치 정의
+ *    gradle은 build/generated-snippets에 스니펫이 생성됨
+ *
+ * 3: 테스트 Task의 결과 아웃풋 디렉토리를 build/generated-snippets로 지정
+ *
+ * 4: asciidoctor Task가 사용할 인풋 디렉토리를 build/generated-snippets로 지정
+ *    dependsOn test로 문서가 작성되기 전에 테스트가 실행되도록 지정
+ *
+ * 5: MockMvc를 테스트에 사용하기 위한 의존성 추가
+ *
+ * 6: 일반 텍스트를 처리하고 HTML 파일을 생성하는 의존성 추가
+ *
+ * 7: asciidoctor Task로 생성한 build/docs/asciidoc 파일을 src/main/resources/static/docs로 복사
+ *
+ * 8: bootJar 실행 시 copyDocument를 먼저 실행하도록 설정
+ */

@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
+import { getTimeDifference } from '../../../../../utils/time';
+
+import useFetch from '../../../../../hooks/useFetch';
+import { COMMENTS } from '../../../../../constants/api';
+
 import Button from '../../../../common/Button';
 import Icon from '../../../../common/Icon';
 import Label from '../../../../common/Label';
@@ -16,17 +21,34 @@ import {
   $UserName,
   $CommentTime,
   $Buttons,
+  $DeleteButton,
 } from './style';
 
 // TODO: 내 userId -> context로 빼기.
 const myId = 6;
 
-const Comment = ({ writerId, commentData }) => {
+const Comment = ({ writerId, commentData, getNewIssueData, issueId }) => {
   const isMine = commentData.commentUser.userId === myId;
   const [isEdited, setIsEdited] = useState(false);
   const [tempComment, setTempComment] = useState(commentData.content);
-  const [editComment, setEditComment] = useState(commentData.content);
+
   const [files, setFiles] = useState([]);
+
+  const { fetchData: patchComment } = useFetch(
+    COMMENTS.PATCH_COMMENT(issueId, commentData.commentId),
+    'PATCH',
+    {
+      content: tempComment,
+    },
+    true,
+  );
+
+  const { fetchData: deleteComment } = useFetch(
+    COMMENTS.DELETE_COMMENT(issueId, commentData.commentId),
+    'DELETE',
+    {},
+    true,
+  );
 
   const commentEditHandler = ({ target }) => {
     setTempComment(target.value);
@@ -39,11 +61,17 @@ const Comment = ({ writerId, commentData }) => {
   const cancelEditBtnHandler = () => {
     setIsEdited(false);
     setTempComment(commentData.content);
-    setEditComment(commentData.content);
   };
 
-  const completeEditHandler = () => {
-    setEditComment(tempComment);
+  const completeEditHandler = async () => {
+    await patchComment();
+    getNewIssueData();
+    setIsEdited(false);
+  };
+
+  const deleteBtnHandler = async () => {
+    await deleteComment();
+    getNewIssueData();
     setIsEdited(false);
   };
 
@@ -58,7 +86,7 @@ const Comment = ({ writerId, commentData }) => {
           <$UserInfo>
             <$UserImg src={commentData.commentUser.url} />
             <$UserName>{commentData.commentUser.name}</$UserName>
-            <$CommentTime>1분 전</$CommentTime>
+            <$CommentTime>{getTimeDifference(commentData.createdAt)}</$CommentTime>
           </$UserInfo>
 
           <$HeaderButtons>
@@ -66,10 +94,16 @@ const Comment = ({ writerId, commentData }) => {
               <Label height={32} backgroundColor="#D9DBE9" fontColor="dark" name="작성자" />
             )}
             {isMine && (
-              <$HeaderButton onClick={editBtnHandler}>
-                <Icon name="edit" />
-                <p>편집</p>
-              </$HeaderButton>
+              <React.Fragment>
+                <$DeleteButton onClick={deleteBtnHandler}>
+                  <Icon name="xSquare" fill="#FF3B30" />
+                  <p>삭제</p>
+                </$DeleteButton>
+                <$HeaderButton onClick={editBtnHandler}>
+                  <Icon name="edit" />
+                  <p>편집</p>
+                </$HeaderButton>
+              </React.Fragment>
             )}
             <$HeaderButton>
               <Icon name="smile" />
@@ -87,7 +121,7 @@ const Comment = ({ writerId, commentData }) => {
             filesUploadHandler={filesUploadHandler}
           />
         ) : (
-          <$CommentText>{editComment}</$CommentText>
+          <$CommentText>{commentData.content}</$CommentText>
         )}
       </$Comment>
       {isEdited && (
@@ -108,8 +142,10 @@ const Comment = ({ writerId, commentData }) => {
 
 Comment.propTypes = {
   // isMine: PropTypes.bool.isRequired,
+  issueId: PropTypes.number.isRequired,
   commentData: PropTypes.object.isRequired,
   writerId: PropTypes.number.isRequired,
+  getNewIssueData: PropTypes.func.isRequired,
 };
 
 export default Comment;

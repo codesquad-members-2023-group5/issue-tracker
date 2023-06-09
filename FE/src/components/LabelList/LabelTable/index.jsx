@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import useFetch from '../../../hooks/useFetch';
 import { LABELS } from '../../../constants/api';
-import generateRandomColor from '../../../utils/generateRandomColor';
+import { generateRandomColor } from '../../../utils/randomColor';
 
 import Button from '../../common/Button';
 import Icon from '../../common/Icon';
@@ -106,7 +106,7 @@ const LabelTable = ({
 
   return (
     <$LabelTable type={type}>
-      <$LabelTableTitle>새로운 레이블 추가</$LabelTableTitle>
+      <$LabelTableTitle>{type === 'add' ? '새로운 레이블 추가' : '레이블 편집'}</$LabelTableTitle>
 
       <$LabelTableLayout>
         <$LabelPreview>

@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-import { USERS } from './constants/api';
+import { USERS, ISSUES } from './constants/api';
+import {
+  mockIssuesData,
+  mockUserData,
+  mockLabelData,
+  mockMilestoneData,
+  mockIssueDetailData,
+  issueDetailData,
+} from './mocks/mockData';
+
 import GlobalStyles from './styles/GlobalStyles';
 import { ThemeProvider } from './context/themeContext';
 import useFetch from './hooks/useFetch';
@@ -17,11 +26,21 @@ import LabelList from './pages/LabelList';
 const App = () => {
   const { data: userImgData } = useFetch(USERS.GET_USER_IMG(6));
 
+  useEffect(() => {
+    const isDataInLocalStorage = localStorage.getItem('mockUserData');
+
+    if (isDataInLocalStorage) return;
+    localStorage.setItem('mockUserData', JSON.stringify(mockUserData));
+    localStorage.setItem('mockLabelData', JSON.stringify(mockLabelData));
+    localStorage.setItem('issueDetailData', JSON.stringify(issueDetailData));
+    localStorage.setItem('mockMilestoneData', JSON.stringify(mockMilestoneData));
+  }, []);
+
   return (
     <ThemeProvider>
       <GlobalStyles />
-      {userImgData && <Header userImgSrc={userImgData.userImgURL} />}
-      <BrowserRouter basename="/">
+      <BrowserRouter>
+        {userImgData && <Header userImgSrc={userImgData.userImgURL} />}
         <Routes>
           <Route path="/login" />
           <Route path="/" element={<Navigate to="/issues" />} />

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import { Link } from 'react-router-dom';
 import useTheme from '../../hooks/useTheme';
 import Icon from '../common/Icon';
 import { $Header, $RightSection, $UserProfile, $LogoIcon } from './style';
@@ -10,9 +11,9 @@ const Header = ({ userImgSrc }) => {
 
   return (
     <$Header>
-      <a href="/">
+      <Link to="/">
         <$LogoIcon width={199} height={25} name="defaultLogo" />
-      </a>
+      </Link>
       <$RightSection>
         <button type="button" onClick={toggleTheme}>
           <Icon width={32} height={32} name={themeMode === 'light' ? 'lightMode' : 'darkMode'} />

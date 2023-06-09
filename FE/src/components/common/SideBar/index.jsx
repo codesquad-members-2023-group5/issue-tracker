@@ -6,6 +6,7 @@ import SideBarMenu from './SideBarMenu';
 import { $SideBar } from './style';
 
 const SideBar = ({
+  issueId,
   assignees,
   labels,
   milestones,
@@ -57,6 +58,7 @@ const SideBar = ({
 };
 
 SideBar.propTypes = {
+  issueId: PropTypes.number,
   assignees: PropTypes.array.isRequired,
   labels: PropTypes.array.isRequired,
   milestones: PropTypes.array.isRequired,

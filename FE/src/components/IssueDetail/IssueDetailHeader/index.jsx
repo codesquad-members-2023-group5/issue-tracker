@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { ISSUES } from '../../../constants/api';
+import { getTimeDifference } from '../../../utils/time';
 import useFetch from '../../../hooks/useFetch';
 
 import Icon from '../../common/Icon';
@@ -22,12 +23,19 @@ import {
 const IssueDetailHeader = ({ issue, getNewIssueData }) => {
   const [isEdited, setIsEdited] = useState(false);
   const [tempTitle, setTempTitle] = useState(issue.issueTitle);
-  const [editTitle, setEditTitle] = useState(issue.issueTitle);
+  const [titleEditedTime, setTitleEditedTime] = useState(issue.createdAt ?? new Date());
 
-  const { fetchData: editIssue } = useFetch(
+  const { fetchData: editIssueStatus } = useFetch(
     ISSUES.PATCH_ISSUE(issue.issueId),
     'PATCH',
     { isopened: !issue.isopened },
+    true,
+  );
+
+  const { fetchData: editIssueTitle } = useFetch(
+    ISSUES.PATCH_ISSUE(issue.issueId),
+    'PATCH',
+    { title: tempTitle },
     true,
   );
 
@@ -38,21 +46,24 @@ const IssueDetailHeader = ({ issue, getNewIssueData }) => {
   const cancelEditBtnHandler = () => {
     setIsEdited(false);
     setTempTitle(issue.issueTitle);
-    setEditTitle(issue.issueTitle);
+    // setEditTitle(issue.issueTitle);
   };
 
   const titleChangeHandler = ({ target }) => {
     setTempTitle(target.value);
   };
 
-  const completeEditHandler = () => {
-    setEditTitle(tempTitle);
+  const completeEditHandler = async () => {
+    // setEditTitle(tempTitle);
+    await editIssueTitle();
     setIsEdited(false);
+    getNewIssueData();
   };
 
   const statusChangeHandler = async () => {
-    await editIssue();
+    await editIssueStatus();
     getNewIssueData();
+    setTitleEditedTime(new Date());
   };
 
   return (
@@ -60,7 +71,7 @@ const IssueDetailHeader = ({ issue, getNewIssueData }) => {
       <$IssueDetailTitle>
         {!isEdited ? (
           <$TitleWrapper>
-            <$IssueTitle>{editTitle}</$IssueTitle>
+            <$IssueTitle>{tempTitle}</$IssueTitle>
             <$IssueId>{`#${issue.issueId}`}</$IssueId>
           </$TitleWrapper>
         ) : (
@@ -111,7 +122,7 @@ const IssueDetailHeader = ({ issue, getNewIssueData }) => {
           />
         ) : (
           <Label
-            height="32"
+            height={32}
             name="닫힌 이슈"
             fontColor="#FEFEFE"
             backgroundColor="#FF3B30"
@@ -119,7 +130,7 @@ const IssueDetailHeader = ({ issue, getNewIssueData }) => {
           />
         )}
         <$IssueInfoText>
-          {`이 이슈가 ${1}분 전에 ${issue.writer.name}님에 의해 ${
+          {`이 이슈가 ${getTimeDifference(titleEditedTime)}에 ${issue.writer.name}님에 의해 ${
             issue.isopened ? '열렸습니다' : '닫혔습니다'
           } ∙ 코멘트 ${issue.comment.length}개 `}
         </$IssueInfoText>

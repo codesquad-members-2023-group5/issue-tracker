@@ -1,22 +1,80 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
-import { useFilterStateContext, useFilterDispatchContext } from '../../../context/filterContext';
+import {
+  useFilterStateContext,
+  useFilterDispatchContext,
+  FILTER_ACTION_TYPES,
+} from '../../../context/filterContext';
 import { useCheckBoxContext } from '../../../context/checkBoxContext';
-import { FILTER_ACTION_TYPES } from '../../../context/filterReducer';
 
-import { isEqualObj } from '../../../utils/isEqualObj';
-import { filterIssues } from '../../../utils';
+import { FILTER_TYPE } from '../../../constants/dropdownMenu';
+
+import { isEqualObj } from '../../../utils/validator';
 
 import Icon from '../../common/Icon';
 import IssueListItem from './IssueListItem';
 import IssueListMainHeader from './IssueListMainHeader';
 import { $IssueList, $NoResultMessage, $IssueListMain, $InitFilterButton } from './style';
 
+const isFilterMatched = ({ currentFilterOption, issueValue }) => {
+  if (issueValue instanceof Array) {
+    if (currentFilterOption === 'none' && issueValue.length === 0) return true;
+    return currentFilterOption === null || issueValue.includes(currentFilterOption);
+  }
+
+  if (currentFilterOption === 'none' && issueValue === null) return true;
+  return currentFilterOption === null || currentFilterOption === issueValue;
+};
+
+const myId = 6;
+
+const filterIssues = ({ type, issues, filterOptions }) => {
+  return issues.filter(({ isopened, milestone, writer, label, assignee, comment }) => {
+    const { userId: writerId } = writer;
+    const labelIdArr = label.map(({ labelId }) => labelId);
+    const assigneeIdArr = assignee.map(({ userId }) => userId);
+
+    const { issue } = filterOptions;
+
+    const isMilestoneMatched = isFilterMatched({
+      currentFilterOption: filterOptions[FILTER_TYPE.MILESTONE],
+      issueValue: milestone?.milestoneId ?? null,
+    });
+    const isLabelMatched = isFilterMatched({
+      currentFilterOption: filterOptions[FILTER_TYPE.LABEL],
+      issueValue: labelIdArr,
+    });
+    const isAssigneeMatched = isFilterMatched({
+      currentFilterOption: issue === 'assignedToMe' ? myId : filterOptions[FILTER_TYPE.ASSIGNEE],
+      issueValue: assigneeIdArr,
+    });
+    const isWriterMatched = isFilterMatched({
+      currentFilterOption: issue === 'writtenByMe' ? myId : filterOptions[FILTER_TYPE.WRITER],
+      issueValue: writerId,
+    });
+
+    const isCommentMatched =
+      issue === 'commentedByMe' ? comment.some(({ commentUser }) => commentUser.userId === myId) : true;
+
+    const isOpenButtonActive = type === 'open';
+
+    return (
+      isopened === isOpenButtonActive &&
+      isMilestoneMatched &&
+      isLabelMatched &&
+      isAssigneeMatched &&
+      isWriterMatched &&
+      isCommentMatched
+    );
+  });
+};
+
 const IssueListMain = ({ issues, user, label, milestone, getNewAllIssueData }) => {
   const { filterState, isFilterChanged } = useFilterStateContext();
   const filterDispatch = useFilterDispatchContext();
   const { resetCheckList } = useCheckBoxContext();
+
   const [isOpened, setIsOpened] = useState(true);
   const prevFilterState = useRef(filterState);
 

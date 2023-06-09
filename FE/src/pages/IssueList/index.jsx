@@ -16,16 +16,11 @@ const IssueList = () => {
   const { data: userData } = useFetch(USERS.GET_ALL_USERS);
   const { data: labelData } = useFetch(LABELS.GET_ALL_LABELS);
   const { data: milestoneData } = useFetch(MILESTONES.GET_ALL_MILESTONES);
-  const [issueAllData, setIssueAllData] = useState([]);
-  const allDataLoaded = issueData && userData && labelData && milestoneData;
 
-  useEffect(() => {
-    if (issueData) setIssueAllData(issueData);
-  }, [issueData]);
+  const allDataLoaded = issueData && userData && labelData && milestoneData;
 
   const getNewAllIssueData = async () => {
     await getAllIssues();
-    setIssueAllData(issueData);
   };
 
   return (

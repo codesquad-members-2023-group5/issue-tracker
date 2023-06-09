@@ -1,7 +1,5 @@
-import React, { createContext, useContext, useReducer, useState } from 'react';
+import React, { createContext, useContext, useReducer } from 'react';
 import PropTypes from 'prop-types';
-
-import { filterReducer } from './filterReducer';
 
 const FilterStateContext = createContext(null);
 const FilterDispatchContext = createContext(null);
@@ -26,27 +24,47 @@ const useFilterDispatchContext = () => {
   return filterDispatch;
 };
 
+const initState = {
+  issue: null,
+  milestone: null,
+  label: null,
+  assignee: null,
+  writer: null,
+};
+
+const FILTER_ACTION_TYPES = {
+  CHANGE_MENU: 'CHANGE_MENU',
+  RESET_FILTER: 'RESET_FILTER',
+};
+
+const filterReducer = (state, action) => {
+  switch (action.type) {
+    case FILTER_ACTION_TYPES.CHANGE_MENU: {
+      const { filterType, id } = action.payload;
+
+      const value = state[filterType] !== id || state[filterType] === null ? id : null;
+
+      if (filterType === 'issue') {
+        return { ...state, issue: value };
+      }
+
+      return { ...state, [filterType]: value };
+    }
+
+    case FILTER_ACTION_TYPES.RESET_FILTER: {
+      return { ...initState };
+    }
+
+    default:
+      return state;
+  }
+};
+
 const FilterProvider = ({ children }) => {
-  // const [isFiltered, setIsFiltered] = useState(false);
-  const [filterState, filterDispatch] = useReducer(filterReducer, {
-    isOpened: true, // 열린 이슈, 닫힌 이슈, 필터드롭다운에도 적용해야함.
-    commentedByMe: false,
-    milestone: null,
-    label: null,
-    assignee: null,
-    writer: null,
-  });
-
-  const initState = {
-    isOpened: true, // 열린 이슈, 닫힌 이슈, 필터드롭다운에도 적용해야함.
-    commentedByMe: false,
-    milestone: null,
-    label: null,
-    assignee: null,
-    writer: null,
-  };
-
+  const [filterState, filterDispatch] = useReducer(filterReducer, initState);
   const isFilterChanged = JSON.stringify(filterState) !== JSON.stringify(initState);
+
+  console.log(filterState);
 
   return (
     <FilterStateContext.Provider value={{ filterState, isFilterChanged }}>
@@ -59,4 +77,10 @@ FilterProvider.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export { FilterProvider, useFilterStateContext, useFilterDispatchContext };
+export {
+  FilterProvider,
+  useFilterStateContext,
+  useFilterDispatchContext,
+  FILTER_ACTION_TYPES,
+  filterReducer,
+};

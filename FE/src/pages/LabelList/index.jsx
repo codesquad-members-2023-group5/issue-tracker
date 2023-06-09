@@ -13,16 +13,10 @@ const LabelList = (props) => {
   const { fetchData: getLabelData, data: labelData } = useFetch(LABELS.GET_ALL_LABELS);
   const { data: milestoneData } = useFetch(MILESTONES.GET_ALL_MILESTONES);
 
-  const [label, setLabel] = useState([]);
   const allDataLoaded = labelData && milestoneData;
-
-  useEffect(() => {
-    if (allDataLoaded) setLabel(labelData);
-  }, [labelData, allDataLoaded]);
 
   const getNewLabelData = async () => {
     await getLabelData();
-    setLabel(labelData);
   };
 
   return (
@@ -33,7 +27,7 @@ const LabelList = (props) => {
           milestoneCount={milestoneData.length}
           getNewLabelData={getNewLabelData}
         />
-        <LabelListMain labels={label} getNewLabelData={getNewLabelData} />
+        <LabelListMain labels={labelData} getNewLabelData={getNewLabelData} />
       </$LabelList>
     )
   );

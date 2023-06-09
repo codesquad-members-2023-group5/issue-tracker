@@ -33,7 +33,7 @@ const convertMenus = ({ type, name, menus, dropDownType }) => {
 
     keys.forEach((key) => {
       if (key.includes('Id')) newMenu.id = menu[key];
-      if (key.includes('name') || key.includes('Name')) newMenu.text = menu[key];
+      if (key.includes('name') || key.includes('Name') || key.includes('text')) newMenu.text = menu[key];
       if (key.includes('url')) newMenu.url = menu[key];
       if (key.includes('backgroundColor')) newMenu.backgroundColor = menu[key];
     });
@@ -79,7 +79,7 @@ const DropDown = ({
     return () => window.removeEventListener('click', closeHandler);
   }, []);
 
-  const convertedMenus = type === 'issue' ? menus : convertMenus({ type, name, menus, dropDownType });
+  const convertedMenus = convertMenus({ type, name, menus, dropDownType });
 
   return (
     <$DropDown>

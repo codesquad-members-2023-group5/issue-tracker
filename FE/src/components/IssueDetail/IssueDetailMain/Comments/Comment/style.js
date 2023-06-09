@@ -24,6 +24,19 @@ const $HeaderButtons = styled.div`
   gap: 16px;
 `;
 
+const $DeleteButton = styled.button`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  width: 41px;
+  height: 32px;
+  font-size: ${({ theme }) => theme.fontSize.S.fontSize};
+  font-weight: ${({ theme }) => theme.fontWeight.bold};
+  color: ${({ theme }) => theme.colors.danger.text};
+  gap: 4px;
+`;
+
 const $HeaderButton = styled.button`
   display: flex;
   flex-direction: row;
@@ -97,4 +110,5 @@ export {
   $UserName,
   $CommentTime,
   $Buttons,
+  $DeleteButton,
 };

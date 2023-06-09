@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 import { useCheckBoxContext } from '../../../../context/checkBoxContext';
+
+import { getTimeDifference } from '../../../../utils/time';
 
 import Icon from '../../../common/Icon';
 import Label from '../../../common/Label';
@@ -17,7 +19,7 @@ import {
   $CheckBox,
 } from './style';
 
-const IssueListItem = ({ issueId, issueTitle, label, writer, milestone, assignee, isOpened }) => {
+const IssueListItem = ({ issueId, issueTitle, label, writer, milestone, assignee, isOpened, createdAt }) => {
   const { checkList, checkBoxHandler } = useCheckBoxContext();
 
   const isSelected = checkList.includes(issueId);
@@ -59,7 +61,7 @@ const IssueListItem = ({ issueId, issueTitle, label, writer, milestone, assignee
 
         <$IssueInfo>
           <span>{`#${issueId}`}</span>
-          <span>{`이 이슈가 1분전, ${writer.name}님에 의해 작성되었습니다.`}</span>
+          <span>{`이 이슈가 ${getTimeDifference(createdAt)}, ${writer.name}님에 의해 작성되었습니다.`}</span>
           {milestone && (
             <$MileStone>
               {milestone && <Icon name="milestone" fill="#6E7191" />}
@@ -81,6 +83,7 @@ IssueListItem.propTypes = {
   milestone: PropTypes.object,
   assignee: PropTypes.array,
   isOpened: PropTypes.bool.isRequired,
+  createdAt: PropTypes.string.isRequired,
 };
 
 export default IssueListItem;
